@@ -1,0 +1,17 @@
+!SESSION 2018-01-16 12:50:15.673 -----------------------------------------------
+eclipse.buildId=4.7.0.I20170612-0950
+java.version=1.8.0_151
+java.vendor=Oracle Corporation
+BootLoader constants: OS=macosx, ARCH=x86_64, WS=cocoa, NL=en_US
+Framework arguments:  -product org.eclipse.epp.package.cpp.product -keyring /Users/airship/.eclipse_keyring
+Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -product org.eclipse.epp.package.cpp.product -keyring /Users/airship/.eclipse_keyring
+
+!ENTRY org.eclipse.core.net 1 0 2018-01-16 12:50:59.778
+!MESSAGE System property http.nonProxyHosts has been set to local|*.local|169.254/16|*.169.254/16 by an external source. This value will be overwritten using the values from the preferences
+
+!ENTRY org.eclipse.core.resources 4 77 2018-01-16 12:51:56.327
+!MESSAGE Invalid project description.
+!SUBENTRY 1 unknown 0 0 2018-01-16 12:51:56.327
+!MESSAGE OK
+!SUBENTRY 1 org.eclipse.core.resources 4 77 2018-01-16 12:51:56.328
+!MESSAGE /Users/airship/Rack/plugins/Tutorial overlaps the location of another project: 'Tutorial'
