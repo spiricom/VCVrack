@@ -36,7 +36,6 @@ typedef struct _tPhasor
     
 } tPhasor;
 
-
 // Cycle: Sine waveform
 typedef struct _tCycle
 {
@@ -59,21 +58,16 @@ typedef struct _tSawtooth
     
 } tSawtooth;
 
-class oSawtooth : public tSawtooth
+class oSawtooth : private tSawtooth
 {
 public:
-    oSawtooth(void);
-    
-    ~oSawtooth(void)
-    {
-        
-    }
+    oSawtooth();
+    ~oSawtooth();
 
-    float tick (void);
-    
     void setFreq(float freq);
-    
+    float tick(void);
 private:
+
 };
 
 // Triangle waveform
