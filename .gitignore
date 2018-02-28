@@ -1,0 +1,4 @@
+.metadata/
+.DS_Store
+builds/
+metamake.sh
