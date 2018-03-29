@@ -3,7 +3,7 @@
 #include "OOPS.h"
 
 
-struct MyModule : Module {
+struct OscillatorModule : Module {
 	enum ParamIds {
 		PITCH_PARAM,
 		NUM_PARAMS
@@ -14,6 +14,9 @@ struct MyModule : Module {
 	};
 	enum OutputIds {
 		SINE_OUTPUT,
+		SAW_OUTPUT,
+		TRI_OUTPUT,
+		SQUARE_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -24,13 +27,19 @@ struct MyModule : Module {
 	float phase = 0.0;
 	float blinkPhase = 0.0;
 
-	oSawtooth* osc;
+	tSawtooth* saw;
+	tCycle* sine;
+	tTriangle* tri;
+	tSquare* square;
 
-	MyModule() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) 
+	OscillatorModule() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) 
 	{
 		OOPSInit(engineGetSampleRate(), nullptr);
 
-		osc = new oSawtooth();
+		saw = tSawtoothInit();
+		sine = tCycleInit();
+		tri = tTriangleInit();
+		square = tSquareInit();
 	}
 	void step() override;
 
@@ -41,7 +50,7 @@ struct MyModule : Module {
 };
 
 
-void MyModule::step() {
+void OscillatorModule::step() {
 	// Implement a simple sine oscillator
 	float deltaTime = 1.0 / engineGetSampleRate();
 
@@ -54,8 +63,15 @@ void MyModule::step() {
 	//tSawtoothSetFreq(&osc, freq);
 	//outputs[SINE_OUTPUT].value = tSawtoothTick(&osc);
 
-	osc->setFreq(freq);
-	outputs[SINE_OUTPUT].value = osc->tick();
+	tSawtoothSetFreq(saw, freq);
+	tTriangleSetFreq(tri, freq);
+	tCycleSetFreq(sine, freq);
+	tSquareSetFreq(square, freq);
+
+	outputs[SINE_OUTPUT].value = tCycleTick(sine);
+	outputs[SAW_OUTPUT].value = tSawtoothTick(saw);
+	outputs[TRI_OUTPUT].value = tTriangleTick(tri);
+	outputs[SQUARE_OUTPUT].value = tSquareTick(square);
 
 	
 
@@ -66,30 +82,37 @@ void MyModule::step() {
 	lights[BLINK_LIGHT].value = (blinkPhase < 0.5) ? 1.0 : 0.0;
 }
 
+#define USE_BACKGROUND 1
 
-
-MyModuleWidget::MyModuleWidget() {
-	MyModule *module = new MyModule();
+OscillatorModuleWidget::OscillatorModuleWidget() {
+	OscillatorModule *module = new OscillatorModule();
 	setModule(module);
 	box.size = Vec(6 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
-
+#if USE_BACKGROUND
 	{
 		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(plugin, "res/MyModule.svg")));
+		panel->setBackground(SVG::load(assetPlugin(plugin, "res/OhNoes.svg")));
 		addChild(panel);
 	}
+#endif
 
 	addChild(createScrew<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 	addChild(createScrew<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 	addChild(createScrew<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 	addChild(createScrew<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-	addParam(createParam<Davies1900hBlackKnob>(Vec(28, 87), module, MyModule::PITCH_PARAM, -3.0, 3.0, 0.0));
+	float y_spacing = RACK_GRID_HEIGHT / 7;
+	int which = 1;
+	addParam(createParam<Davies1900hBlackKnob>(Vec(28, y_spacing * which++), module, OscillatorModule::PITCH_PARAM, -3.0, 3.0, 0.0));
 
-	addInput(createInput<PJ301MPort>(Vec(33, 186), module, MyModule::PITCH_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(33, y_spacing * which++), module, OscillatorModule::PITCH_INPUT));
 
-	addOutput(createOutput<PJ301MPort>(Vec(33, 275), module, MyModule::SINE_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(33, y_spacing * which++), module, OscillatorModule::SINE_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(33, y_spacing * which++), module, OscillatorModule::TRI_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(33, y_spacing * which++), module, OscillatorModule::SAW_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(33, y_spacing * which++), module, OscillatorModule::SQUARE_OUTPUT));
 
-	addChild(createLight<MediumLight<RedLight>>(Vec(41, 59), module, MyModule::BLINK_LIGHT));
+	addChild(createLight<MediumLight<RedLight>>(Vec(41, 40), module, OscillatorModule::BLINK_LIGHT));
 }
+

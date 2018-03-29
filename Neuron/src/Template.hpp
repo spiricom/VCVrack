@@ -11,6 +11,6 @@ extern Plugin *plugin;
 ////////////////////
 
 
-struct OscillatorModuleWidget : ModuleWidget {
-	OscillatorModuleWidget();
+struct NeuronModuleWidget : ModuleWidget {
+	NeuronModuleWidget();
 };
