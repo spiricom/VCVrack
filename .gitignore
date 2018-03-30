@@ -3,3 +3,6 @@
 build/
 build/src/
 metamake.sh
+Fundamental/
+*.dylib
+*.o
