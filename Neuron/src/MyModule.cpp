@@ -116,12 +116,15 @@ void NeuronModule::step() {
 		inputVoltages[i][BASE] = 0.5f * MAX_VOLTAGE * params[i*2].value;
 		inputVoltages[i][GAIN] = params[i*2+1].value;
 		inputVoltages[i][IN] = (inputs[i].value);
-		sumVoltages[i] =  (inputVoltages[i][BASE] + inputVoltages[i][GAIN] * inputVoltages[i][IN]) * 0.1;
+		sumVoltages[i] =  (inputVoltages[i][BASE] + ((inputVoltages[i][GAIN] * 2.0f) - 1.0f) * inputVoltages[i][IN]) * 0.1;
 	}
 
     float current = 80.0f+60.0f*(sumVoltages[CURRENT]);
     //float timeStep = voltageToTimestepVoltPerOctave(sumVoltages[PITCH]);
+
     float timeStep = 1.0f / (sumVoltages[PITCH]*128.0f*2.0f + 1.0f);
+    if (timeStep > 0.2f) timeStep = 0.2f;
+
     float lithium = -sumVoltages[LITHIUM];
     float sodium = 128.0f + (sumVoltages[SODIUM] * 128.0f) * 3.0f;
     //float potassium = 70.0f + sumVoltages[POTASSIUM] * 50.0f;
@@ -141,7 +144,9 @@ void NeuronModule::step() {
              printf("P%d in     : %f\n", i + 1, inputVoltages[i][IN]);
              printf("P%d sumVoltage : %f\n", i + 1, sumVoltages[i]);
              */
+             
              printf("P%d sumVoltage : %f\n", i + 1, sumVoltages[i]);
+             printf("P%d gain : %f\n", i + 1, inputVoltages[i][GAIN]);
              
         }
 
