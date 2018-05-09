@@ -32,9 +32,10 @@ struct NeuronModule : Module {
         LITHIUM,
         SODIUM,
         POTASSIUM,
+        CALCIUM,
         V1,
-        V2,
-        v3
+        V3,
+        NUM_CHANNELS
     };
 
 	enum ParamIds {
@@ -110,51 +111,62 @@ void NeuronModule::step() {
 	// Implement a simple sine oscillator
 	float deltaTime = 1.0 / engineGetSampleRate();
 
-	// Compute the frequency from the pitch parameter and input
-	//float pitch = params[PITCH_PARAM].value;
-	//pitch += inputs[PITCH_INPUT].value;
-	//pitch = clampf(pitch, -4.0, 4.0);
-	//float freq = 440.0 * powf(2.0, pitch);
-
 	for (int i = 0 ; i < 8; i++)
 	{
 		inputVoltages[i][BASE] = 0.5f * MAX_VOLTAGE * params[i*2].value;
 		inputVoltages[i][GAIN] = params[i*2+1].value;
 		inputVoltages[i][IN] = (inputs[i].value);
-		sumVoltages[i] =  (inputVoltages[i][BASE] + inputVoltages[i][GAIN] * inputVoltages[i][IN]);
+		sumVoltages[i] =  (inputVoltages[i][BASE] + inputVoltages[i][GAIN] * inputVoltages[i][IN]) * 0.1;
 	}
 
-    float current = 90.0f+10.0f*(sumVoltages[CURRENT]);
-    float timeStep = voltageToTimestepVoltPerOctave(sumVoltages[PITCH]);
+    float current = 80.0f+60.0f*(sumVoltages[CURRENT]);
+    //float timeStep = voltageToTimestepVoltPerOctave(sumVoltages[PITCH]);
+    float timeStep = 1.0f / (sumVoltages[PITCH]*128.0f*2.0f + 1.0f);
     float lithium = -sumVoltages[LITHIUM];
     float sodium = 128.0f + (sumVoltages[SODIUM] * 128.0f) * 3.0f;
-    float potassium = 70.0f + sumVoltages[POTASSIUM] * 50.0f;
+    //float potassium = 70.0f + sumVoltages[POTASSIUM] * 50.0f;
+    float c = 2.0f * sumVoltages[CALCIUM] + 0.01;
     float v1 = (sumVoltages[V1] * 128.0f)*2.0f - 128.0f;
-    float v3 = (sumVoltages[V2] * 128.0f)*2.0f - 128.0f;
+    //float v2 = (sumVoltages[V2] * 128.0f)*2.0f - 128.0f;
+    float v3 = sumVoltages[V3] * 200.0f - 128.0f;
 
-    if (++counter == 80000)
+    if (++counter == 40000)
     {
         counter = 0;
-        printf("timestep: %f \n", timeStep);
-        printf("base   : %f\n", inputVoltages[PITCH][BASE]);
-        // for (int i = 0 ; i < 3; i++)
-        // {
-        //     printf("P%d base   : %f\n", i + 1, inputVoltages[i][BASE]);
-        //     printf("P%d gain   : %f\n", i + 1, inputVoltages[i][GAIN]);
-        //     printf("P%d in     : %f\n", i + 1, inputVoltages[i][IN]);
-        //     printf("P%d sumVoltage : %f\n", i + 1, sumVoltages[i]);
-        // }
+        for (int i = 0 ; i < NUM_CHANNELS; i++)
+        {
+        	/*
+             printf("P%d base   : %f\n", i + 1, inputVoltages[i][BASE]);
+             printf("P%d gain   : %f\n", i + 1, inputVoltages[i][GAIN]);
+             printf("P%d in     : %f\n", i + 1, inputVoltages[i][IN]);
+             printf("P%d sumVoltage : %f\n", i + 1, sumVoltages[i]);
+             */
+             printf("P%d sumVoltage : %f\n", i + 1, sumVoltages[i]);
+             
+        }
+
+        printf("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~\n");
+		printf("timeStep: %f\n", timeStep);
+		printf("current: %f\n", current);
+		printf("lithium: %f\n", lithium);
+		printf("sodium: %f\n", sodium);
+		//printf("potassium: %f\n", potassium);
+		printf("v1: %f\n", v1);
+		printf("C: %f\n", c);
+		printf("v3: %f\n", v3);
     }
 
 
 
     // Neuron expects a negative timestep???????
-    tNeuronSetTimeStep(neuron, -timeStep);
+    tNeuronSetTimeStep(neuron, timeStep);
     tNeuronSetCurrent(neuron, current);
 	tNeuronSetL(neuron, lithium);
 	tNeuronSetN(neuron, sodium);
-    tNeuronSetK(neuron, potassium);
+	tNeuronSetC(neuron, c);
+    //tNeuronSetK(neuron, potassium);
     tNeuronSetV1(neuron, v1);
+    //tNeuronSetV2(neuron, v2);
     tNeuronSetV3(neuron, v3);
 
     //tNeuronSetL(neuron, -(crunched[P3] * 128.0f));
@@ -169,6 +181,8 @@ void NeuronModule::step() {
 
 
 	outputs[OUTPUT].value = 10.0f * tCompressorTick(compressor, tNeuronTick(neuron));
+
+	//outputs[OUTPUT].value = 10.0f * tNeuronTick(neuron);
 
 	// Blink light at 1Hz
 	blinkPhase += deltaTime;
@@ -192,18 +206,21 @@ NeuronModuleWidget::NeuronModuleWidget() {
 	}
 #endif
 
+/*
 	addChild(createScrew<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 	addChild(createScrew<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 	addChild(createScrew<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 	addChild(createScrew<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+*/
 
 	float y_spacing = RACK_GRID_HEIGHT / 5;
 
 	// COLUMN 1
 	int offset = -5;
-	int davies_x = 10;
+	int davies_x = 5;
 	int bef_x = davies_x + 45;
-	int pj_x = davies_x + 23;
+	int pj_x = davies_x + 25;
+
 
 	int y = offset + y_spacing;
 	addParam(createParam<Davies1900hBlackKnob>(Vec(davies_x, y), module, 	NeuronModule::P1_BASE, 0.0, 1.0, 0.5));
@@ -227,9 +244,9 @@ NeuronModuleWidget::NeuronModuleWidget() {
 
 	// COLUMN 2
 
-	davies_x += box.size.x * 0.5;
-	bef_x += box.size.x * 0.5;
-	pj_x += box.size.x * 0.5;
+	davies_x += box.size.x * 0.5 - 8;
+	bef_x = davies_x + 45;
+	pj_x = davies_x + 23;
 
 	y = offset + y_spacing;
 	addParam(createParam<Davies1900hBlackKnob>(Vec(davies_x, y), module, 	NeuronModule::P5_BASE, 0.0, 1.0, 0.5));
@@ -254,5 +271,5 @@ NeuronModuleWidget::NeuronModuleWidget() {
 
 
 	// OUTPUT
-	addOutput(createOutput<PJ301MPort>(Vec(box.size.x * 0.5,  y_spacing * 0.5), module, NeuronModule::OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(box.size.x * 0.5 - 15,  y_spacing * 0.5), module, NeuronModule::OUTPUT));
 }
